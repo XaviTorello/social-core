@@ -129,3 +129,7 @@ class AppleIdAuth(BaseOAuth2):
 
         decoded_data = self.decode_id_token(jwt_string)
         return super(AppleIdAuth, self).do_auth(access_token, response=decoded_data, *args, **kwargs)
+
+    def get_redirect_uri(self, state=None):
+        """Patch redirect_uri with current absolute URI"""
+        return self.strategy.absolute_uri()      
