@@ -130,6 +130,25 @@ class AppleIdAuth(BaseOAuth2):
         decoded_data = self.decode_id_token(jwt_string)
         return super(AppleIdAuth, self).do_auth(access_token, response=decoded_data, *args, **kwargs)
 
+
+class AppleIdAuthCustomRedirect(AppleIdAuth):
+    """
+    Devised to work with direct https://appleid.apple.com/auth/authorize redirects.
+
+    It patchs the redirect_uri to use current requested URI (should be the one used as `redirect_uri` param at appleid.apple.com /auth/authorize).
+
+    i.e https://appleid.apple.com/auth/authorize?client_id=com.client.your&redirect_uri=http://some.domain.cat/api/v1/users/oauth/social/jwt-pair/apple-id/&response_type=code%20id_token&scope=name+email&response_mode=form_post&state=10
+    """
+
+    name = "apple-id-custom-redirect"
+
+    def __init__(self, *args, **kwargs):
+        """
+        Reuse base apple-id name to ensure use same config vars
+        """
+        self.name = "apple-id"
+        super().__init__(*args, **kwargs)
+
     def get_redirect_uri(self, state=None):
         """Patch redirect_uri with current absolute URI"""
-        return self.strategy.absolute_uri()      
+        return self.strategy.absolute_uri()
