@@ -142,12 +142,13 @@ class AppleIdAuthCustomRedirect(AppleIdAuth):
 
     name = "apple-id-custom-redirect"
 
-    def __init__(self, *args, **kwargs):
-        """
-        Reuse base apple-id name to ensure use same config vars
-        """
-        self.name = "apple-id"
-        super().__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     """
+    #     Reuse base apple-id name to ensure use same config vars
+    #     Activate it if you need the same configs than for the AppleIdAuth backend
+    #     """
+    #     self.name = "apple-id"
+    #     super().__init__(*args, **kwargs)
 
     def get_redirect_uri(self, state=None):
         """Patch redirect_uri with current absolute URI"""
