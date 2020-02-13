@@ -83,11 +83,16 @@ class AppleIdAuth(BaseOAuth2):
         client_secret = self.generate_client_secret()
         return client_id, client_secret
 
-    def get_apple_jwk(self):
+    def get_apple_jwk(self, kid=None):
         keys = self.get_json(url=self.JWK_URL).get("keys")
+
         if not isinstance(keys, list) or not keys:
             raise AuthCanceled("Invalid jwk response")
-
+        
+        # Return requested key instead of the last one
+        if kid:
+            return json.dumps([key for key in keys if key['kid'] == kid][0])
+        
         return json.dumps(keys.pop())
 
     def decode_id_token(self, id_token):
@@ -95,7 +100,9 @@ class AppleIdAuth(BaseOAuth2):
         if not id_token:
             raise AuthCanceled("Missing id_token parameter")
 
-        public_key = RSAAlgorithm.from_jwk(self.get_apple_jwk())
+
+        kid = jwt.get_unverified_header(id_token).get('kid', None)
+        public_key = RSAAlgorithm.from_jwk(self.get_apple_jwk(kid))
         try:
             decoded = jwt.decode(id_token, key=public_key, audience=self.setting("CLIENT"), algorithm="RS256",)
         except PyJWTError:
