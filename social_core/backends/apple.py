@@ -11,7 +11,9 @@ Settings:
     * `CLIENT` - your client id;
     * `SECRET` - your secret key;
     * `SCOPE` (optional) - e.g. `['name', 'email']`;
-    * `EMAIL_AS_USERNAME` - use apple email is username is set, use apple id otherwise.
+    * `EMAIL_AS_USERNAME` - use apple email is username if set, use apple id otherwise.
+    * `ENFORCE_REDIRECT_URL_WITH_REQUESTED_URI` (optional) - if True will use requested absolute URI as redirect url
+    * `REDIRECT_URL` (optional) - your fixed absolute redirect url
     * `AppleIdAuth.TOKEN_TTL_SEC` - time before JWT token expiration, seconds.
 """
 
@@ -150,3 +152,24 @@ class AppleIdAuth(BaseOAuth2):
             *args,
             **kwargs
         )
+
+    def get_redirect_uri(self, state=None):
+        """
+        It patchs redirect_uri based on ENFORCE_REDIRECT_URL_WITH_REQUESTED_URI and REDIRECT_URL settings:
+        - if ENFORCE_REDIRECT_URL_WITH_REQUESTED_URI=True, will use current requested URI (should be the one used as `redirect_uri` param at appleid.apple.com /auth/authorize)
+        - if REDIRECT_URL has value, will use it
+        - if REDIRECT_URL is not setted will keep doing the same logic
+
+        Use ENFORCE_REDIRECT_URL_WITH_REQUESTED_URI=True to provide https://appleid.apple.com/auth/authorize redirects compatibility.
+        i.e https://appleid.apple.com/auth/authorize?client_id=com.client.your&redirect_uri=http://some.domain.cat/api/v1/users/oauth/social/jwt-pair/apple-id/&response_type=code%20id_token&scope=name+email&response_mode=form_post&state=10
+        """
+        enforce_uri = self.setting("ENFORCE_REDIRECT_URL_WITH_REQUESTED_URI")
+        redirect_url = self.setting("REDIRECT_URL")
+
+        if enforce_uri:
+            return self.strategy.absolute_uri()
+
+        if redirect_url:
+            return redirect_url
+            
+        return super(AppleIdAuth, self).get_redirect_uri(state)
